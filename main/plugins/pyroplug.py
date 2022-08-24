@@ -12,10 +12,7 @@ from ethon.pyfunc import video_metadata
 from telethon import events
 
 def thumbnail(sender):
-    if os.path.exists(f'{sender}.jpg'):
-        return f'{sender}.jpg'
-    else:
-         return None
+    return f'{sender}.jpg' if os.path.exists(f'{sender}.jpg') else None
       
 async def check(userbot, client, link):
     msg_id = int(link.split("/")[-1])
@@ -44,18 +41,16 @@ async def get_msg(userbot, client, sender, edit_id, msg_link, i):
         chat = int('-100' + str(msg_link.split("/")[-2]))
         try:
             msg = await userbot.get_messages(chat, msg_id)
-            if msg.media:
-                if 'web_page' in msg.media:
-                    edit = await client.edit_message_text(sender, edit_id, "Cloning.")
-                    await client.send_message(sender, msg.text.markdown)
-                    await edit.delete()
-                    return
-            if not msg.media:
-                if msg.text:
-                    edit = await client.edit_message_text(sender, edit_id, "Cloning.")
-                    await client.send_message(sender, msg.text.markdown)
-                    await edit.delete()
-                    return
+            if msg.media and 'web_page' in msg.media:
+                edit = await client.edit_message_text(sender, edit_id, "Cloning.")
+                await client.send_message(sender, msg.text.markdown)
+                await edit.delete()
+                return
+            if not msg.media and msg.text:
+                edit = await client.edit_message_text(sender, edit_id, "Cloning.")
+                await client.send_message(sender, msg.text.markdown)
+                await edit.delete()
+                return
             edit = await client.edit_message_text(sender, edit_id, "Trying to Download.")
             file = await userbot.download_media(
                 msg,
@@ -68,9 +63,7 @@ async def get_msg(userbot, client, sender, edit_id, msg_link, i):
                 )
             )
             await edit.edit('Preparing to Upload!')
-            caption = str(file)
-            if msg.caption is not None:
-                caption = msg.caption
+            caption = msg.caption if msg.caption is not None else str(file)
             if str(file).split(".")[-1] in ['mkv', 'mp4', 'webm']:
                 if str(file).split(".")[-1] in ['webm', 'mkv']:
                     path = str(file).split(".")[0] + ".mp4"
@@ -115,10 +108,10 @@ async def get_msg(userbot, client, sender, edit_id, msg_link, i):
             await edit.delete()
         except (ChannelBanned, ChannelInvalid, ChannelPrivate, ChatIdInvalid, ChatInvalid):
             await client.edit_message_text(sender, edit_id, "Have you joined the channel?")
-            return 
+            return
         except Exception as e:
             await client.edit_message_text(sender, edit_id, f'Failed to save: `{msg_link}`')
-            return 
+            return
     else:
         edit = await client.edit_message_text(sender, edit_id, "Cloning.")
         chat =  msg_link.split("/")[-2]
